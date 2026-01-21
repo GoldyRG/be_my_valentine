@@ -66,10 +66,10 @@ export default function ValentineCard() {
     const yesRect = yesBtn.getBoundingClientRect();
 
     const padding = 14;
-    const gap = 14;
+    const gap = 12;
 
-    const targetX = yesRect.right + gap;
-    const targetY = yesRect.top + (yesRect.height - noRect.height) / 2;
+    const targetX = yesRect.left + (yesRect.width - noRect.width) / 2;
+    const targetY = yesRect.bottom + gap;
 
     const maxX = Math.max(padding, vp.width - noRect.width - padding);
     const maxY = Math.max(padding, vp.height - noRect.height - padding);
@@ -189,13 +189,14 @@ export default function ValentineCard() {
     return (
       <div
         ref={cardRef}
-        className="relative w-full max-w-xl rounded-3xl border border-white/15 bg-white/10 p-8 shadow-2xl backdrop-blur-xl"
+        className="relative w-full max-w-xl rounded-3xl border border-white/15 bg-gradient-to-br from-white/15 via-white/10 to-white/5 p-8 shadow-[0_30px_80px_rgba(0,0,0,0.45)] ring-1 ring-white/10 backdrop-blur-xl"
       >
         <div className="pointer-events-none absolute inset-0 overflow-hidden rounded-3xl">
-          <div className="absolute -top-32 left-1/2 h-72 w-72 -translate-x-1/2 rounded-full blur-3xl opacity-40 bg-white/20" />
+          <div className="absolute -top-32 left-1/2 h-72 w-72 -translate-x-1/2 rounded-full bg-rose-200/30 blur-3xl opacity-50" />
+          <div className="absolute -bottom-28 right-6 h-64 w-64 rounded-full bg-pink-200/20 blur-3xl opacity-40" />
         </div>
 
-        <h1 className="text-balance text-center text-4xl font-semibold tracking-tight">
+        <h1 className="text-balance text-center text-4xl font-semibold tracking-tight text-white">
           Let’s gooo 💘
         </h1>
         <p className="mt-4 text-center text-white/80">
@@ -218,7 +219,7 @@ export default function ValentineCard() {
             setNoTries(0);
             setIsDodging(false);
           }}
-          className="mt-10 w-full rounded-2xl border border-white/15 bg-white/10 px-5 py-3 text-sm font-medium text-white/90 transition hover:bg-white/15"
+          className="mt-10 w-full rounded-2xl border border-white/20 bg-white/10 px-5 py-3 text-sm font-medium text-white/90 shadow-lg shadow-black/20 transition hover:bg-white/15"
         >
           Replay
         </button>
@@ -230,15 +231,15 @@ export default function ValentineCard() {
     <>
       <div
         ref={cardRef}
-        className="relative w-full max-w-xl overflow-hidden rounded-3xl border border-white/15 bg-white/10 p-8 shadow-2xl backdrop-blur-xl"
+        className="relative w-full max-w-xl overflow-hidden rounded-3xl border border-white/15 bg-gradient-to-br from-white/15 via-white/10 to-white/5 p-8 shadow-[0_30px_80px_rgba(0,0,0,0.45)] ring-1 ring-white/10 backdrop-blur-xl"
       >
         <div className="pointer-events-none absolute inset-0">
-          <div className="absolute -top-40 left-1/2 h-80 w-80 -translate-x-1/2 rounded-full bg-white/20 blur-3xl opacity-40" />
-          <div className="absolute -bottom-40 right-10 h-80 w-80 rounded-full bg-white/10 blur-3xl opacity-40" />
+          <div className="absolute -top-40 left-1/2 h-80 w-80 -translate-x-1/2 rounded-full bg-rose-200/30 blur-3xl opacity-50" />
+          <div className="absolute -bottom-40 right-10 h-80 w-80 rounded-full bg-pink-200/20 blur-3xl opacity-40" />
         </div>
 
         <div className="relative">
-          <h1 className="text-balance text-center text-4xl font-semibold tracking-tight">
+          <h1 className="text-balance text-center text-4xl font-semibold tracking-tight text-white">
             Do you want to be my Valentine?
           </h1>
           <p className="mt-4 text-center text-white/80">
@@ -250,13 +251,13 @@ export default function ValentineCard() {
               ref={yesBtnRef}
               type="button"
               onClick={() => setAccepted(true)}
-              className="rounded-2xl bg-white px-6 py-3 text-sm font-semibold text-black shadow-lg transition hover:translate-y-[-1px] hover:shadow-xl active:translate-y-[0px]"
+              className="rounded-2xl bg-gradient-to-r from-rose-200 via-pink-200 to-amber-200 px-7 py-3 text-sm font-semibold text-rose-950 shadow-[0_14px_30px_rgba(251,113,133,0.35)] transition hover:-translate-y-0.5 hover:shadow-[0_18px_40px_rgba(251,113,133,0.45)] active:translate-y-0"
             >
               Yes 💖
             </button>
           </div>
 
-          <p className="mt-10 text-center text-xs text-white/60">
+          <p className="mt-16 text-center text-xs text-white/70">
             Tip: try to click “No” 😄
           </p>
         </div>
@@ -268,7 +269,7 @@ export default function ValentineCard() {
         onMouseEnter={scheduleNoMove}
         onFocus={scheduleNoMove}
         onClick={scheduleNoMove}
-        className="fixed z-50 rounded-2xl border border-white/20 bg-white/10 px-6 py-3 text-sm font-semibold text-white/90 shadow-lg backdrop-blur transition-all duration-200 ease-out hover:bg-white/15"
+        className="fixed z-50 rounded-2xl border border-rose-200/40 bg-rose-500/10 px-6 py-3 text-sm font-semibold text-rose-50 shadow-[0_12px_28px_rgba(244,63,94,0.25)] backdrop-blur transition-all duration-200 ease-out hover:border-rose-200/70 hover:bg-rose-500/20"
         style={{
           left: `${noPos.x}px`,
           top: `${noPos.y}px`,
