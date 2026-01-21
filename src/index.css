@@ -7,3 +7,18 @@
 body {
   margin: 0;
 }
+
+@keyframes no-dodge {
+  0% {
+    transform: translateX(0) rotate(0deg);
+  }
+  40% {
+    transform: translateX(-4px) rotate(-1deg);
+  }
+  70% {
+    transform: translateX(4px) rotate(1deg);
+  }
+  100% {
+    transform: translateX(0) rotate(0deg);
+  }
+}
