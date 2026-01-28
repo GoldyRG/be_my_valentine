@@ -578,9 +578,13 @@ export default function ValentineCard({ onAccept, onReset }) {
       {isNoTestOpen && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/65 px-4 py-10 sm:px-6 sm:py-12 backdrop-blur-sm">
           <div className="w-full max-w-lg rounded-[28px] border border-rose-200/30 bg-gradient-to-br from-neutral-950/90 via-neutral-900/85 to-rose-950/70 p-6 sm:p-7 text-white shadow-[0_40px_120px_rgba(0,0,0,0.55)]">
-            <div className="flex items-center justify-center gap-2 text-[11px] font-semibold uppercase tracking-[0.3em] text-rose-100/80">
-              <span className="rounded-full border border-rose-200/40 bg-rose-500/15 px-3 py-1">You thought it would be that easy?</span>
-              <span className="rounded-full border border-white/15 bg-white/5 px-3 py-1">Prove you don't love me!</span>
+            <div className="flex flex-col items-center justify-center gap-3 text-[11px] font-semibold uppercase tracking-[0.3em] text-rose-100/80 sm:flex-row sm:gap-3">
+              <span className="flex w-full min-h-[38px] items-center justify-center rounded-full border border-rose-200/40 bg-rose-500/15 px-4 py-2 text-center sm:w-auto sm:px-3 sm:py-1">
+                You thought it would be that easy?
+              </span>
+              <span className="flex w-full min-h-[38px] items-center justify-center rounded-full border border-white/15 bg-white/5 px-4 py-2 text-center sm:w-auto sm:px-3 sm:py-1">
+                Prove you don't love me!
+              </span>
             </div>
 
             <h2 className="mt-4 text-center text-3xl font-bold">Solve this quiz to answer no:</h2>
