@@ -1,4 +1,4 @@
-import ValentineCard from "./components/ValentineCard.jsx";
+﻿import ValentineCard from "./components/ValentineCard.jsx";
 
 const floatingHearts = [
   { left: "8%", top: "18%", size: 16, drift: -18, delay: "0s", duration: "9s", opacity: 0.45, color: "rgba(248, 113, 113, 0.45)" },
@@ -58,3 +58,10 @@ export default function App() {
     </div>
   );
 }
+
+
+
+
+
+
+
