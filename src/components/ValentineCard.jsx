@@ -32,8 +32,11 @@ export default function ValentineCard({ onAccept, onReset }) {
   const noBtnRef = useRef(null);
   const noMoveTimeoutRef = useRef(null);
   const noDodgeTimeoutRef = useRef(null);
+  const lastNoAttemptRef = useRef(0);
+  const noLabelResetRef = useRef(null);
   const loveOverlayTimeoutRef = useRef(null);
   const heartOverlayTimeoutRef = useRef(null);
+  const quizOpenTimeoutRef = useRef(null);
   const noTestInputRef = useRef(null);
 
   const [accepted, setAccepted] = useState(false);
@@ -47,8 +50,13 @@ export default function ValentineCard({ onAccept, onReset }) {
   const [noTest, setNoTest] = useState(null);
   const [noAnswer, setNoAnswer] = useState("");
   const [noError, setNoError] = useState("");
+  const [noDisplayLabel, setNoDisplayLabel] = useState("No");
+  const [hearts, setHearts] = useState(5);
   const [heartRain, setHeartRain] = useState([]);
   const [confetti, setConfetti] = useState([]);
+  const [openingQuiz, setOpeningQuiz] = useState(false);
+
+  const MAX_HEARTS = 5;
 
   const NO_MOVE_DELAY_MS = 140;
   const NO_DODGE_DURATION_MS = 180;
@@ -113,8 +121,21 @@ export default function ValentineCard({ onAccept, onReset }) {
 
     const attempts = 40;
 
+    // Prefer jumping to the opposite half of the screen so moves feel dramatic.
+    const currentCenterX = noRect.left + noRect.width / 2;
+    const isOnLeft = currentCenterX < vp.width / 2;
+    const targetMinX = isOnLeft
+      ? Math.max(padding, vp.width * 0.55)
+      : padding;
+    const targetMaxX = isOnLeft
+      ? Math.max(padding, vp.width - noRect.width - padding)
+      : Math.max(padding, vp.width * 0.45 - noRect.width);
+
     for (let i = 0; i < attempts; i += 1) {
-      const x = getRandomInt(minX, maxX);
+      const x = getRandomInt(
+        Math.min(targetMinX, maxX),
+        Math.max(targetMaxX, targetMinX)
+      );
       const y = getRandomInt(minY, maxY);
 
       const candidate = {
@@ -158,8 +179,8 @@ export default function ValentineCard({ onAccept, onReset }) {
         answer: String((a - c) * (b + d) + c),
       },
       {
-        prompt: `Count the letters in "luckiest valentine ever" and add ${b}.`,
-        answer: String("luckiest valentine ever".replace(/\\s+/g, "").length + b),
+        prompt: `Hard mode: take ${a}, ${b}, and ${c}. Compute ((${a} * ${b}) - ${c}) ÷ ${d} (round to nearest whole number).`,
+        answer: String(Math.round(((a * b) - c) / d)),
       },
       {
         prompt: `Binary flex: what is ${c} + ${d} in binary? (answer in decimal)`,
@@ -171,7 +192,8 @@ export default function ValentineCard({ onAccept, onReset }) {
   }, []);
 
   const openNoTest = () => {
-    if (isNoTestOpen || showHeartBreak) return;
+    if (isNoTestOpen || showHeartBreak || openingQuiz) return;
+    setOpeningQuiz(true);
     const nextTest = createNoTest();
     setNoTest(nextTest);
     setNoAnswer("");
@@ -179,9 +201,15 @@ export default function ValentineCard({ onAccept, onReset }) {
     setShowHeartBreak(true);
 
     heartOverlayTimeoutRef.current = window.setTimeout(() => {
+      setShowHeartBreak(true);
+    }, 0);
+
+    quizOpenTimeoutRef.current = window.setTimeout(() => {
       setIsNoTestOpen(true);
       setShowHeartBreak(false);
-    }, 1200);
+      setOpeningQuiz(false);
+      setDeclined(false);
+    }, 1300);
   };
 
   const handleNoTestSubmit = (event) => {
@@ -249,6 +277,26 @@ export default function ValentineCard({ onAccept, onReset }) {
     }, 1150);
   };
 
+  const registerNoAttempt = () => {
+    const now = Date.now();
+    if (now - lastNoAttemptRef.current < 350) return;
+    lastNoAttemptRef.current = now;
+
+    setHearts((prev) => {
+      const next = Math.max(prev - 1, 0);
+      if (next <= 0) {
+        // Out of hearts: send to the No end-state flow
+        setAccepted(false);
+        setShowHeartLove(false);
+        setShowHeartBreak(false);
+        setIsNoTestOpen(false);
+        setDeclined(true);
+        return 0;
+      }
+      return next;
+    });
+  };
+
   const resetAll = () => {
     setAccepted(false);
     setDeclined(false);
@@ -258,10 +306,13 @@ export default function ValentineCard({ onAccept, onReset }) {
     setNoTest(null);
     setNoAnswer("");
     setNoError("");
+    setNoDisplayLabel("No");
+    setHearts(MAX_HEARTS);
     setHeartRain([]);
     setConfetti([]);
     setShowHeartLove(false);
     setShowHeartBreak(false);
+    setNoPos({ x: 24, y: 24 });
 
     if (onReset) onReset();
 
@@ -273,6 +324,10 @@ export default function ValentineCard({ onAccept, onReset }) {
       clearTimeout(noDodgeTimeoutRef.current);
       noDodgeTimeoutRef.current = null;
     }
+    if (noLabelResetRef.current) {
+      clearTimeout(noLabelResetRef.current);
+      noLabelResetRef.current = null;
+    }
     if (loveOverlayTimeoutRef.current) {
       clearTimeout(loveOverlayTimeoutRef.current);
       loveOverlayTimeoutRef.current = null;
@@ -281,6 +336,16 @@ export default function ValentineCard({ onAccept, onReset }) {
       clearTimeout(heartOverlayTimeoutRef.current);
       heartOverlayTimeoutRef.current = null;
     }
+    if (quizOpenTimeoutRef.current) {
+      clearTimeout(quizOpenTimeoutRef.current);
+      quizOpenTimeoutRef.current = null;
+    }
+    setOpeningQuiz(false);
+
+    // Reposition the No button after state resets.
+    window.requestAnimationFrame(() => {
+      placeNoButtonNearYes();
+    });
   };
 
   const scheduleNoMove = () => {
@@ -288,6 +353,7 @@ export default function ValentineCard({ onAccept, onReset }) {
       return;
     }
 
+    registerNoAttempt();
     setNoTries((t) => t + 1);
     setIsDodging(true);
 
@@ -308,11 +374,32 @@ export default function ValentineCard({ onAccept, onReset }) {
     }
   }, [isNoTestOpen]);
 
+  const heartOverlay = showHeartBreak ? (
+    <div className="fixed inset-0 z-[65] flex items-center justify-center bg-black/70 backdrop-blur-sm">
+      <div className="flex flex-col items-center gap-4 text-center text-white">
+        <div className="heart-break text-8xl sm:text-9xl" aria-hidden="true">💔</div>
+        <p className="text-lg font-semibold text-rose-100">Not so fast!</p>
+        <p className="text-sm text-white/70">...now you must face the impossible quiz.</p>
+      </div>
+    </div>
+  ) : null;
+
   useLayoutEffect(() => {
     if (!accepted && !declined) {
       placeNoButtonNearYes();
     }
   }, [accepted, declined, placeNoButtonNearYes]);
+
+  useEffect(() => {
+    setNoDisplayLabel(noLabel);
+    if (noLabelResetRef.current) {
+      clearTimeout(noLabelResetRef.current);
+    }
+    noLabelResetRef.current = window.setTimeout(() => {
+      setNoDisplayLabel("No");
+      noLabelResetRef.current = null;
+    }, 600);
+  }, [noLabel]);
 
   useEffect(() => {
     if (!accepted) return undefined;
@@ -329,12 +416,19 @@ export default function ValentineCard({ onAccept, onReset }) {
       if (noDodgeTimeoutRef.current) {
         clearTimeout(noDodgeTimeoutRef.current);
       }
+      if (noLabelResetRef.current) {
+        clearTimeout(noLabelResetRef.current);
+      }
       if (loveOverlayTimeoutRef.current) {
         clearTimeout(loveOverlayTimeoutRef.current);
       }
       if (heartOverlayTimeoutRef.current) {
         clearTimeout(heartOverlayTimeoutRef.current);
       }
+      if (quizOpenTimeoutRef.current) {
+        clearTimeout(quizOpenTimeoutRef.current);
+      }
+      setOpeningQuiz(false);
     };
   }, []);
 
@@ -358,12 +452,79 @@ export default function ValentineCard({ onAccept, onReset }) {
     };
   }, []);
 
+  if (isNoTestOpen) {
+    return (
+      <>
+        {heartOverlay}
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/65 px-4 py-10 sm:px-6 sm:py-12 backdrop-blur-sm">
+        <div className="w-full max-w-lg rounded-[28px] border border-rose-200/30 bg-gradient-to-br from-neutral-950/90 via-neutral-900/85 to-rose-950/70 p-6 sm:p-7 text-white shadow-[0_40px_120px_rgba(0,0,0,0.55)]">
+          <div className="flex flex-col items-center justify-center gap-3 text-[11px] font-semibold uppercase tracking-[0.3em] text-rose-100/80 sm:flex-row sm:gap-3">
+            <span className="flex w-full min-h-[38px] items-center justify-center rounded-full border border-rose-200/40 bg-rose-500/15 px-4 py-2 text-center sm:w-auto sm:px-3 sm:py-1">
+              You thought it would be that easy?
+            </span>
+            <span className="flex w-full min-h-[38px] items-center justify-center rounded-full border border-white/15 bg-white/5 px-4 py-2 text-center sm:w-auto sm:px-3 sm:py-1">
+              Prove you don't love me!
+            </span>
+          </div>
+
+          <h2 className="mt-4 text-center text-3xl font-bold">Solve this quiz to answer no:</h2>
+          <p className="mt-3 text-center text-sm text-white/75">
+            Or you can change your mind and pick again (hint: pick "Yes") 😊
+          </p>
+
+          <form onSubmit={handleNoTestSubmit} className="mt-7 space-y-4">
+            <label className="block text-sm text-white/85">
+              {noTest?.prompt ?? "Loading your test..."}
+            </label>
+            <input
+              ref={noTestInputRef}
+              type="text"
+              inputMode="numeric"
+              value={noAnswer}
+              onChange={(event) => setNoAnswer(event.target.value)}
+              className="w-full rounded-2xl border border-white/15 bg-white/10 px-4 py-3 text-sm text-white placeholder-white/40 outline-none transition focus:border-rose-200/70 focus:bg-white/15"
+              placeholder="Enter your answer"
+              autoFocus
+            />
+            {noError ? <p className="text-xs text-rose-200">{noError}</p> : null}
+
+            <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
+              <button
+                type="submit"
+                className="rounded-2xl bg-gradient-to-r from-rose-200 via-pink-200 to-amber-200 px-6 py-2.5 text-xs font-semibold text-rose-950 shadow-[0_12px_30px_rgba(251,113,133,0.45)] transition hover:-translate-y-0.5"
+              >
+                Submit answer
+              </button>
+              <button
+                type="button"
+                onClick={handleNoTestReset}
+                className="rounded-2xl border border-white/20 bg-white/10 px-5 py-2 text-xs font-semibold text-white/85 transition hover:bg-white/15"
+              >
+                New test
+              </button>
+              <button
+                type="button"
+                onClick={resetAll}
+                className="rounded-2xl border border-white/10 bg-transparent px-5 py-2 text-xs font-semibold text-white/70 transition hover:text-white"
+              >
+                Try again
+              </button>
+            </div>
+          </form>
+        </div>
+        </div>
+      </>
+    );
+  }
+
   if (accepted) {
     return (
-      <div
-        ref={cardRef}
-        className="relative w-full max-w-4xl overflow-hidden rounded-[32px] border border-white/20 bg-gradient-to-br from-rose-200/25 via-white/8 to-amber-200/15 px-6 py-8 sm:px-10 sm:py-10 shadow-[0_40px_120px_rgba(0,0,0,0.5)] ring-1 ring-white/20 backdrop-blur-2xl animate-yes-pop"
-      >
+      <>
+        {heartOverlay}
+        <div
+          ref={cardRef}
+          className="relative w-full max-w-4xl overflow-hidden rounded-[32px] border border-white/20 bg-gradient-to-br from-rose-200/25 via-white/8 to-amber-200/15 px-6 py-8 sm:px-10 sm:py-10 shadow-[0_40px_120px_rgba(0,0,0,0.5)] ring-1 ring-white/20 backdrop-blur-2xl animate-yes-pop"
+        >
         <div className="pointer-events-none absolute inset-0">
           <div className="absolute -top-32 left-1/2 h-72 w-72 -translate-x-1/2 rounded-full bg-rose-200/35 blur-3xl opacity-60" />
           <div className="absolute -bottom-28 right-6 h-64 w-64 rounded-full bg-pink-200/20 blur-3xl opacity-45" />
@@ -426,7 +587,7 @@ export default function ValentineCard({ onAccept, onReset }) {
             How does it feel to be loved by someone as handome as me? 😘❤️‍🔥 
           </p>
           <p className="mt-4 max-w-2xl text-sm sm:text-base text-white/80">
-            Time for backshots!? ╰(*°▽°*)╯
+            Time to celebrate, but first coffee? ☕️😉
           </p>
           <div className="mt-10 flex flex-wrap items-center justify-center gap-4">
             <button
@@ -438,16 +599,19 @@ export default function ValentineCard({ onAccept, onReset }) {
             </button>
           </div>
         </div>
-      </div>
+        </div>
+      </>
     );
   }
 
   if (declined) {
     return (
-      <div
-        ref={cardRef}
-        className="relative w-full max-w-3xl overflow-hidden rounded-[28px] border border-white/15 bg-gradient-to-br from-rose-900/70 via-fuchsia-900/60 to-amber-900/50 px-6 py-8 sm:p-10 shadow-[0_30px_90px_rgba(0,0,0,0.5)] ring-1 ring-white/10 backdrop-blur-xl"
-      >
+      <>
+        {heartOverlay}
+        <div
+          ref={cardRef}
+          className="relative w-full max-w-3xl overflow-hidden rounded-[28px] border border-white/15 bg-gradient-to-br from-rose-900/70 via-fuchsia-900/60 to-amber-900/50 px-6 py-8 sm:p-10 shadow-[0_30px_90px_rgba(0,0,0,0.5)] ring-1 ring-white/10 backdrop-blur-xl"
+        >
         <div className="pointer-events-none absolute inset-0 overflow-hidden rounded-3xl">
           <div className="absolute -top-32 left-1/2 h-72 w-72 -translate-x-1/2 rounded-full bg-rose-200/25 blur-3xl opacity-50" />
           <div className="absolute -bottom-28 right-6 h-64 w-64 rounded-full bg-pink-200/15 blur-3xl opacity-40" />
@@ -459,36 +623,41 @@ export default function ValentineCard({ onAccept, onReset }) {
             ⚠️ Declined
           </span>
           <span className="rounded-full border border-white/25 bg-white/10 px-4 py-1 text-[11px] font-semibold uppercase tracking-[0.3em] text-white/80">
-            Challenge mode
+            Time to cry 😿
           </span>
         </div>
 
         <h1 className="mt-4 text-balance text-center text-3xl sm:text-4xl font-semibold tracking-tight text-white">
-          Ouch, but I respect it.
+          Ouch, you really said no!
         </h1>
-        <p className="mt-3 text-center text-sm sm:text-base text-white/80">
-          Honesty noted. You'll need to pass another ridiculous test to escape, or hit replay to reconsider.
-        </p>
-
+        
         <div className="mt-8 grid gap-4 sm:grid-cols-2 md:grid-cols-3">
           <div className="rounded-2xl border border-white/15 bg-white/10 px-4 py-4 text-left text-sm text-white shadow-lg shadow-black/25">
             <p className="text-2xl">🛡️</p>
-            <p className="mt-2 text-base font-semibold text-white">Defense: high</p>
+            <p className="mt-2 text-base font-semibold text-white">Defense: Failed</p>
             <p className="mt-1 text-sm text-white/70">The No button fought hard.</p>
           </div>
           <div className="rounded-2xl border border-white/15 bg-white/10 px-4 py-4 text-left text-sm text-white shadow-lg shadow-black/25">
             <p className="text-2xl">🧠</p>
-            <p className="mt-2 text-base font-semibold text-white">Tests remain</p>
-            <p className="mt-1 text-sm text-white/70">More riddles await if you insist.</p>
+            <p className="mt-2 text-base font-semibold text-white">One more challenge awaits </p>
+            <p className="mt-1 text-sm text-white/70">Prove that you really mean it.</p>
           </div>
           <div className="rounded-2xl border border-white/15 bg-white/10 px-4 py-4 text-left text-sm text-white shadow-lg shadow-black/25">
             <p className="text-2xl">💫</p>
-            <p className="mt-2 text-base font-semibold text-white">Replay anytime</p>
+            <p className="mt-2 text-base font-semibold text-white">Test or no test </p>
             <p className="mt-1 text-sm text-white/70">A happier ending is one click away.</p>
           </div>
         </div>
 
         <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
+          <button
+            type="button"
+            onClick={openNoTest}
+            disabled={openingQuiz}
+            className={`rounded-2xl bg-gradient-to-r from-amber-200 via-pink-200 to-rose-200 px-7 py-2.5 text-sm font-semibold text-rose-900 shadow-[0_14px_30px_rgba(251,113,133,0.28)] transition hover:-translate-y-0.5 hover:shadow-[0_18px_40px_rgba(251,113,133,0.4)] ${openingQuiz ? "opacity-70 cursor-not-allowed" : ""}`}
+          >
+            {openingQuiz ? "Starting..." : "Start quiz"}
+          </button>
           <button
             type="button"
             onClick={resetAll}
@@ -497,12 +666,14 @@ export default function ValentineCard({ onAccept, onReset }) {
             Replay
           </button>
         </div>
-      </div>
+        </div>
+      </>
     );
   }
 
   return (
     <>
+      {heartOverlay}
       <div
         ref={cardRef}
         className="relative w-full max-w-xl overflow-hidden rounded-3xl border border-white/15 bg-gradient-to-br from-white/15 via-white/10 to-white/5 p-6 sm:p-8 shadow-[0_30px_80px_rgba(0,0,0,0.45)] ring-1 ring-white/10 backdrop-blur-xl"
@@ -516,6 +687,17 @@ export default function ValentineCard({ onAccept, onReset }) {
           <h1 className="text-balance text-center text-3xl sm:text-4xl font-semibold tracking-tight text-white">
             Do you want to be my Valentine? ❤️😍😘
           </h1>
+          <div className="mt-4 flex items-center justify-center gap-2 text-lg" aria-label="Heart lives">
+            {Array.from({ length: MAX_HEARTS }).map((_, idx) => (
+              <span
+                key={`heart-${idx}`}
+                className="emoji-float"
+                style={{ animationDelay: `${idx * 0.08}s` }}
+              >
+                {idx < hearts ? "❤️" : "🤍"}
+              </span>
+            ))}
+          </div>
           <p className="mt-4 text-center text-sm sm:text-base text-white/80">
             Think carefully before you answer…
           </p>
@@ -543,26 +725,17 @@ export default function ValentineCard({ onAccept, onReset }) {
           type="button"
           onMouseEnter={isFinalNo ? undefined : scheduleNoMove}
           onFocus={isFinalNo ? undefined : scheduleNoMove}
+          onTouchStart={scheduleNoMove}
           onClick={isFinalNo ? openNoTest : scheduleNoMove}
-          className="fixed z-50 rounded-2xl border border-rose-200/40 bg-rose-500/10 px-6 py-3 text-sm font-semibold text-rose-50 shadow-[0_12px_28px_rgba(244,63,94,0.25)] backdrop-blur transition-all duration-200 ease-out hover:border-rose-200/70 hover:bg-rose-500/20"
+          className="fixed z-50 rounded-2xl border border-rose-200/40 bg-rose-500/10 px-6 py-3 text-sm font-semibold text-rose-50 shadow-[0_12px_28px_rgba(244,63,94,0.25)] backdrop-blur transition-all duration-150 ease-out hover:border-rose-200/70 hover:bg-rose-500/20"
           style={{
             left: `${noPos.x}px`,
             top: `${noPos.y}px`,
             animation: isDodging ? `no-dodge ${NO_DODGE_DURATION_MS}ms ease-in-out` : undefined,
           }}
         >
-          {noLabel}
+          {noDisplayLabel}
         </button>
-      )}
-
-      {showHeartBreak && (
-        <div className="fixed inset-0 z-[65] flex items-center justify-center bg-black/70 backdrop-blur-sm">
-          <div className="flex flex-col items-center gap-4 text-center text-white">
-            <div className="heart-break text-8xl sm:text-9xl" aria-hidden="true">💔</div>
-            <p className="text-lg font-semibold text-rose-100">Not so fast!</p>
-            <p className="text-sm text-white/70">...now you must face the impossible quiz.</p>
-          </div>
-        </div>
       )}
 
       {showHeartLove && (
@@ -575,65 +748,6 @@ export default function ValentineCard({ onAccept, onReset }) {
         </div>
       )}
 
-      {isNoTestOpen && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/65 px-4 py-10 sm:px-6 sm:py-12 backdrop-blur-sm">
-          <div className="w-full max-w-lg rounded-[28px] border border-rose-200/30 bg-gradient-to-br from-neutral-950/90 via-neutral-900/85 to-rose-950/70 p-6 sm:p-7 text-white shadow-[0_40px_120px_rgba(0,0,0,0.55)]">
-            <div className="flex flex-col items-center justify-center gap-3 text-[11px] font-semibold uppercase tracking-[0.3em] text-rose-100/80 sm:flex-row sm:gap-3">
-              <span className="flex w-full min-h-[38px] items-center justify-center rounded-full border border-rose-200/40 bg-rose-500/15 px-4 py-2 text-center sm:w-auto sm:px-3 sm:py-1">
-                You thought it would be that easy?
-              </span>
-              <span className="flex w-full min-h-[38px] items-center justify-center rounded-full border border-white/15 bg-white/5 px-4 py-2 text-center sm:w-auto sm:px-3 sm:py-1">
-                Prove you don't love me!
-              </span>
-            </div>
-
-            <h2 className="mt-4 text-center text-3xl font-bold">Solve this quiz to answer no:</h2>
-            <p className="mt-3 text-center text-sm text-white/75">
-              Or you can change your mind and pick again (hint: pick "Yes") 😊
-            </p>
-
-            <form onSubmit={handleNoTestSubmit} className="mt-7 space-y-4">
-              <label className="block text-sm text-white/85">
-                {noTest?.prompt ?? "Loading your test..."}
-              </label>
-              <input
-                ref={noTestInputRef}
-                type="text"
-                inputMode="numeric"
-                value={noAnswer}
-                onChange={(event) => setNoAnswer(event.target.value)}
-                className="w-full rounded-2xl border border-white/15 bg-white/10 px-4 py-3 text-sm text-white placeholder-white/40 outline-none transition focus:border-rose-200/70 focus:bg-white/15"
-                placeholder="Enter your answer"
-                autoFocus
-              />
-              {noError ? <p className="text-xs text-rose-200">{noError}</p> : null}
-
-              <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
-                <button
-                  type="submit"
-                  className="rounded-2xl bg-gradient-to-r from-rose-200 via-pink-200 to-amber-200 px-6 py-2.5 text-xs font-semibold text-rose-950 shadow-[0_12px_30px_rgba(251,113,133,0.45)] transition hover:-translate-y-0.5"
-                >
-                  Submit answer
-                </button>
-                <button
-                  type="button"
-                  onClick={handleNoTestReset}
-                  className="rounded-2xl border border-white/20 bg-white/10 px-5 py-2 text-xs font-semibold text-white/85 transition hover:bg-white/15"
-                >
-                  New test
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setIsNoTestOpen(false)}
-                  className="rounded-2xl border border-white/10 bg-transparent px-5 py-2 text-xs font-semibold text-white/70 transition hover:text-white"
-                >
-                  Close
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
     </>
   );
 }
