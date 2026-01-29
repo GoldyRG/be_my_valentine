@@ -19,7 +19,7 @@ const floatingHearts = [
 
 export default function App() {
   return (
-    <div className="relative min-h-screen overflow-hidden bg-gradient-to-br from-rose-800 via-pink-900 to-amber-900 text-white">
+    <div className="relative flex min-h-screen flex-col overflow-hidden bg-gradient-to-br from-rose-800 via-pink-900 to-amber-900 text-white">
       <div className="pointer-events-none absolute inset-0">
         <div className="absolute -top-28 left-1/2 h-[28rem] w-[28rem] -translate-x-1/2 rounded-full bg-rose-300/30 blur-[120px] opacity-70" />
         <div className="absolute bottom-0 right-0 h-[36rem] w-[36rem] rounded-full bg-pink-300/20 blur-[150px] opacity-60" />
@@ -48,7 +48,7 @@ export default function App() {
         ))}
       </div>
 
-      <main className="relative z-10 flex min-h-screen items-center justify-center px-6 py-12">
+      <main className="relative z-10 flex flex-1 items-center justify-center px-6 py-12">
         <ValentineCard />
       </main>
 
