@@ -55,6 +55,7 @@ export default function ValentineCard({ onAccept, onReset }) {
   const [heartRain, setHeartRain] = useState([]);
   const [confetti, setConfetti] = useState([]);
   const [openingQuiz, setOpeningQuiz] = useState(false);
+  const [quizCleared, setQuizCleared] = useState(false);
 
   const MAX_HEARTS = 5;
 
@@ -217,8 +218,10 @@ export default function ValentineCard({ onAccept, onReset }) {
     if (!noTest) return;
 
     if (noAnswer.trim() === noTest.answer) {
-      setDeclined(true);
       setIsNoTestOpen(false);
+      setDeclined(false);
+      setQuizCleared(true);
+      setShowHeartBreak(false);
       setNoError("");
       return;
     }
@@ -300,6 +303,7 @@ export default function ValentineCard({ onAccept, onReset }) {
   const resetAll = () => {
     setAccepted(false);
     setDeclined(false);
+    setQuizCleared(false);
     setNoTries(0);
     setIsDodging(false);
     setIsNoTestOpen(false);
@@ -378,8 +382,8 @@ export default function ValentineCard({ onAccept, onReset }) {
     <div className="fixed inset-0 z-[65] flex items-center justify-center bg-black/70 backdrop-blur-sm">
       <div className="flex flex-col items-center gap-4 text-center text-white">
         <div className="heart-break text-8xl sm:text-9xl" aria-hidden="true">💔</div>
-        <p className="text-lg font-semibold text-rose-100">Not so fast!</p>
-        <p className="text-sm text-white/70">...now you must face the impossible quiz.</p>
+        <p className="text-lg font-semibold text-rose-100">Fine!</p>
+        <p className="text-sm text-white/70">...but good luck you'll need it!</p>
       </div>
     </div>
   ) : null;
@@ -398,7 +402,7 @@ export default function ValentineCard({ onAccept, onReset }) {
     noLabelResetRef.current = window.setTimeout(() => {
       setNoDisplayLabel("No");
       noLabelResetRef.current = null;
-    }, 600);
+    }, 1200);
   }, [noLabel]);
 
   useEffect(() => {
@@ -512,6 +516,49 @@ export default function ValentineCard({ onAccept, onReset }) {
             </div>
           </form>
         </div>
+        </div>
+      </>
+    );
+  }
+
+  if (quizCleared) {
+    return (
+      <>
+        {heartOverlay}
+        <div
+          ref={cardRef}
+          className="relative w-full max-w-3xl overflow-hidden rounded-[28px] border border-white/15 bg-gradient-to-br from-rose-950/70 via-fuchsia-900/60 to-amber-900/50 px-6 py-10 sm:p-12 shadow-[0_30px_90px_rgba(0,0,0,0.6)] ring-1 ring-white/15 backdrop-blur-xl"
+        >
+          <div className="pointer-events-none absolute inset-0 overflow-hidden rounded-3xl">
+            <div className="absolute -top-28 left-1/2 h-64 w-64 -translate-x-1/2 rounded-full bg-rose-200/25 blur-3xl opacity-45" />
+            <div className="absolute -bottom-24 right-8 h-60 w-60 rounded-full bg-pink-200/15 blur-3xl opacity-35" />
+          </div>
+
+          <div className="flex items-center justify-center gap-3 text-center">
+            <span className="rounded-full border border-white/25 bg-white/10 px-4 py-1 text-[11px] font-semibold uppercase tracking-[0.3em] text-white/80">
+              💔 Final state
+            </span>
+            <span className="rounded-full border border-white/25 bg-white/10 px-4 py-1 text-[11px] font-semibold uppercase tracking-[0.3em] text-white/80">
+              Try again next year
+            </span>
+          </div>
+
+          <h1 className="mt-6 text-balance text-center text-4xl font-bold tracking-tight text-white">
+            Heartbroken... Try again next year!
+          </h1>
+          <p className="mt-3 text-center text-white/80">
+            You aced the quiz but the heart is shattered. Maybe next Valentine's Day will be brighter.
+          </p>
+
+          <div className="mt-10 flex flex-wrap items-center justify-center gap-4">
+            <button
+              type="button"
+              onClick={resetAll}
+              className="rounded-2xl border border-white/25 bg-white/10 px-7 py-3 text-sm font-semibold text-white/90 shadow-lg shadow-black/25 transition hover:bg-white/20"
+            >
+              Restart
+            </button>
+          </div>
         </div>
       </>
     );
@@ -644,7 +691,7 @@ export default function ValentineCard({ onAccept, onReset }) {
           </div>
           <div className="rounded-2xl border border-white/15 bg-white/10 px-4 py-4 text-left text-sm text-white shadow-lg shadow-black/25">
             <p className="text-2xl">💫</p>
-            <p className="mt-2 text-base font-semibold text-white">Test or no test </p>
+            <p className="mt-2 text-base font-semibold text-white">Do you really want a quiz?</p>
             <p className="mt-1 text-sm text-white/70">A happier ending is one click away.</p>
           </div>
         </div>

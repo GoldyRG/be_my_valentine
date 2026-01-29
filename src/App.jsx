@@ -48,11 +48,11 @@ export default function App() {
         ))}
       </div>
 
-      <main className="relative z-10 flex min-h-screen items-center justify-center px-6 py-16">
+      <main className="relative z-10 flex min-h-screen items-center justify-center px-6 py-12">
         <ValentineCard />
       </main>
 
-      <footer className="relative z-10 pb-8 text-center text-xs text-white/60">
+      <footer className="relative z-20 pb-4 text-center text-xs text-white/60">
         Built with love - GoldyRG
       </footer>
     </div>
